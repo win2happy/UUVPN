@@ -10,6 +10,11 @@ on:
     paths:
       - 'Android-kotlin-Code/**'
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag name for release (leave empty to skip release)'
+        required: false
+        type: string
 
 jobs:
   build:
@@ -49,7 +54,7 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' || inputs.tag != ''
     defaults:
       run:
         working-directory: ./Android-kotlin-Code
@@ -98,8 +103,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: v${{ github.run_number }}
-        release_name: Release v${{ github.run_number }}
+        tag_name: ${{ inputs.tag || format('v{0}', github.run_number) }}
+        release_name: Release ${{ inputs.tag || format('v{0}', github.run_number) }}
         draft: false
         prerelease: false
 
