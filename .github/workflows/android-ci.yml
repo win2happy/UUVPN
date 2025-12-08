@@ -41,7 +41,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: debug-apk
-        path: Android-kotlin-Code/app/build/outputs/apk/debug/**/*.apk
+        path: Android-kotlin-Code/app/build/outputs/apk/alpha/debug/*.apk
 
     - name: Run tests
       run: ./gradlew test
@@ -86,7 +86,7 @@ jobs:
       uses: ilharp/sign-android-release@v1
       id: sign_app
       with:
-        releaseDir: Android-kotlin-Code/app/build/outputs/apk/release
+        releaseDir: Android-kotlin-Code/app/build/outputs/apk/alpha/release
         signingKey: release.keystore
         keyAlias: ${{ secrets.KEY_ALIAS }}
         keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
