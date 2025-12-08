@@ -54,82 +54,91 @@ jobs:
         name: debug-apk
         path: Android-kotlin-Code/app/build/outputs/apk/alpha/debug/*.apk
 
-    - name: Run tests
-      run: ./gradlew test
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.event.inputs.release_tag != ''
-    defaults:
-      run:
-        working-directory: ./Android-kotlin-Code
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v5
+    - name: Upload to release
+      uses: svenstaro/upload-release-action@v2
+      if: github.event.inputs.release_tag != ''
       with:
-        submodules: 'recursive'
-        fetch-depth: '0'
+        file: ${{ github.workspace }}/Android-kotlin-Code/app/build/outputs/apk/alpha/debug/*.apk
+        tag: ${{ github.event.inputs.release_tag }}
+        file_glob: true
+        prerelease: true
 
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3.2.0
-      with:
-        log-accepted-android-sdk-licenses: false
-        cmdline-tools-version: '12266719'
-        packages: 'platforms;android-35 build-tools;35.0.0 platform-tools'
+    # - name: Run tests
+    #   run: ./gradlew test
 
-    - name: Setup Java
-      uses: actions/setup-java@v4.7.0
-      with:
-        distribution: 'temurin'
-        java-version: '11'
+  # release:
+  #   needs: build
+  #   runs-on: ubuntu-latest
+  #   if: github.event.inputs.release_tag != ''
+  #   defaults:
+  #     run:
+  #       working-directory: ./Android-kotlin-Code
 
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v5
+  #     with:
+  #       submodules: 'recursive'
+  #       fetch-depth: '0'
 
-    - name: Decode keystore
-      env:
-        KEYSTORE: ${{ secrets.KEYSTORE }}
-      run: |
-        echo $KEYSTORE | base64 -d > release.keystore
+  #   - name: Setup Android SDK
+  #     uses: android-actions/setup-android@v3.2.0
+  #     with:
+  #       log-accepted-android-sdk-licenses: false
+  #       cmdline-tools-version: '12266719'
+  #       packages: 'platforms;android-35 build-tools;35.0.0 platform-tools'
 
-    - name: Create signing.properties
-      run: |
-        echo "keystore.password=${{ secrets.KEYSTORE_PASSWORD }}" > signing.properties
-        echo "key.alias=${{ secrets.KEY_ALIAS }}" >> signing.properties
-        echo "key.password=${{ secrets.KEY_PASSWORD }}" >> signing.properties
+  #   - name: Setup Java
+  #     uses: actions/setup-java@v4.7.0
+  #     with:
+  #       distribution: 'temurin'
+  #       java-version: '11'
 
-    - name: Build release APK
-      run: ./gradlew assembleRelease
+  #   - name: Grant execute permission for gradlew
+  #     run: chmod +x gradlew
 
-    - name: Sign APK
-      uses: ilharp/sign-android-release@v1
-      id: sign_app
-      with:
-        releaseDir: Android-kotlin-Code/app/build/outputs/apk/alpha/release
-        signingKey: release.keystore
-        keyAlias: ${{ secrets.KEY_ALIAS }}
-        keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
-        keyPassword: ${{ secrets.KEY_PASSWORD }}
+  #   - name: Decode keystore
+  #     env:
+  #       KEYSTORE: ${{ secrets.KEYSTORE }}
+  #     run: |
+  #       echo $KEYSTORE | base64 -d > release.keystore
 
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.event.inputs.release_tag }}
-        release_name: Release ${{ github.event.inputs.release_tag }}
-        draft: false
-        prerelease: false
+  #   - name: Create signing.properties
+  #     run: |
+  #       echo "keystore.password=${{ secrets.KEYSTORE_PASSWORD }}" > signing.properties
+  #       echo "key.alias=${{ secrets.KEY_ALIAS }}" >> signing.properties
+  #       echo "key.password=${{ secrets.KEY_PASSWORD }}" >> signing.properties
 
-    - name: Upload Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ steps.sign_app.outputs.signedFile }}
-        asset_name: uuvpn-release.apk
-        asset_content_type: application/vnd.android.package-archive
+  #   - name: Build release APK
+  #     run: ./gradlew assembleRelease
+
+  #   - name: Sign APK
+  #     uses: ilharp/sign-android-release@v1
+  #     id: sign_app
+  #     with:
+  #       releaseDir: Android-kotlin-Code/app/build/outputs/apk/alpha/release
+  #       signingKey: release.keystore
+  #       keyAlias: ${{ secrets.KEY_ALIAS }}
+  #       keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
+  #       keyPassword: ${{ secrets.KEY_PASSWORD }}
+
+  #   - name: Create Release
+  #     id: create_release
+  #     uses: actions/create-release@v1
+  #     env:
+  #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     with:
+  #       tag_name: ${{ github.event.inputs.release_tag }}
+  #       release_name: Release ${{ github.event.inputs.release_tag }}
+  #       draft: false
+  #       prerelease: false
+
+  #   - name: Upload Release Asset
+  #     uses: actions/upload-release-asset@v1
+  #     env:
+  #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     with:
+  #       upload_url: ${{ steps.create_release.outputs.upload_url }}
+  #       asset_path: ${{ steps.sign_app.outputs.signedFile }}
+  #       asset_name: uuvpn-release.apk
+  #       asset_content_type: application/vnd.android.package-archive
