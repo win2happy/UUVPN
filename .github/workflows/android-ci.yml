@@ -1,0 +1,64 @@
+name: Android CI/CD
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        required: false
+        type: string
+  push:
+    branches:
+      - master-custom
+    paths:
+      - 'Android-kotlin-Code/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./Android-kotlin-Code
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+      with:
+        submodules: 'recursive'
+        fetch-depth: '0'
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3.2.0
+      with:
+        log-accepted-android-sdk-licenses: false
+        cmdline-tools-version: '12266719'
+        packages: 'platforms;android-35 build-tools;35.0.0 platform-tools'
+
+    - name: Setup Java
+      uses: actions/setup-java@v4.7.0
+      with:
+        distribution: 'temurin'
+        java-version: '11'
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Validate Gradle wrapper
+      uses: gradle/wrapper-validation-action@v3
+
+    - name: Build debug APK
+      run: ./gradlew assembleDebug
+
+    - name: Upload debug APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: debug-apk
+        path: Android-kotlin-Code/app/build/outputs/apk/alpha/debug/*.apk
+
+    - name: Upload to release
+      uses: svenstaro/upload-release-action@v2
+      if: github.event.inputs.release_tag != ''
+      with:
+        file: ${{ github.workspace }}/Android-kotlin-Code/app/build/outputs/apk/alpha/debug/*.apk
+        tag: ${{ github.event.inputs.release_tag }}
+        file_glob: true
+        prerelease: true
