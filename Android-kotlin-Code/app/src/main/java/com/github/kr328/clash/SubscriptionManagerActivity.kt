@@ -105,7 +105,7 @@ class SubscriptionManagerActivity : AppCompatActivity() {
                 binding.expireTimeText.text = "过期时间: $expireDate"
                 
                 if (sub.isExpired) {
-                    binding.expireTimeText.setTextColor(getColor(android.R.color.holor_red))
+                    binding.expireTimeText.setTextColor(getColor(android.R.color.holo_red_dark))
                 }
             } else {
                 binding.expireTimeText.text = "永久有效"
