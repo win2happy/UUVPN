@@ -235,6 +235,12 @@
     <string name="app">App</string>
     <string name="service">Service</string>
 
+    <string name="subscription">Subscription</string>
+    <string name="subscription_type">Subscription Type</string>
+    <string name="subscription_type_summary">Choose subscription link type</string>
+    <string name="subscription_type_v2ray">V2Ray/VMess (Auto convert)</string>
+    <string name="subscription_type_clash">Clash (Direct use)</string>
+
     <string name="dark_mode">Dark Mode</string>
 
     <string name="show_traffic">Show Traffic</string>

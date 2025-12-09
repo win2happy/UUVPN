@@ -98,6 +98,11 @@
     <string name="always_dark">总是暗黑模式</string>
     <string name="always_light">总是明亮模式</string>
     <string name="service">服务</string>
+    <string name="subscription">订阅</string>
+    <string name="subscription_type">订阅类型</string>
+    <string name="subscription_type_summary">选择订阅链接类型</string>
+    <string name="subscription_type_v2ray">V2Ray/VMess (自动转换)</string>
+    <string name="subscription_type_clash">Clash (直接使用)</string>
     <string name="accept_http_content">仅接受 http(s) 和 content 类型</string>
     <string name="at_least_15_minutes">至少 15 分钟</string>
     <string name="override">覆写</string>

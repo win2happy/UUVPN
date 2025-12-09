@@ -75,6 +75,29 @@ class AppSettingsDesign(
             ) {
                 enabled = !running
             }
+
+            category(R.string.subscription)
+
+            selectableList(
+                value = object : MutablePreference<String> {
+                    override var value: String
+                        get() = PreferenceManager.subscriptionType
+                        set(value) {
+                            PreferenceManager.subscriptionType = value
+                        }
+                },
+                values = arrayOf(
+                    PreferenceManager.SUBSCRIPTION_TYPE_V2RAY,
+                    PreferenceManager.SUBSCRIPTION_TYPE_CLASH
+                ),
+                valuesText = arrayOf(
+                    R.string.subscription_type_v2ray,
+                    R.string.subscription_type_clash
+                ),
+                icon = R.drawable.ic_baseline_file_download,
+                title = R.string.subscription_type,
+                summary = R.string.subscription_type_summary
+            )
         }
 
         binding.content.addView(screen.root)

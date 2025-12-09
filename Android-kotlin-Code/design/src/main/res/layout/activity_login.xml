@@ -100,48 +100,6 @@
             android:src="@drawable/ic_visibility_off_24px"/>
     </FrameLayout>
 
-    <!-- 订阅类型选择 -->
-    <TextView
-        android:id="@+id/login_subscriptionTypeLabel"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="订阅链接类型"
-        android:textSize="14sp"
-        android:textColor="@color/black"
-        android:textStyle="bold"
-        android:layout_marginBottom="8dp" />
-
-    <RadioGroup
-        android:id="@+id/login_subscriptionTypeGroup"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="16dp"
-        android:background="@drawable/rounded_edittext"
-        android:padding="8dp">
-
-        <RadioButton
-            android:id="@+id/login_radioV2ray"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="V2Ray订阅"
-            android:textSize="14sp"
-            android:textColor="@color/black"
-            android:checked="true"
-            android:buttonTint="@color/blue" />
-
-        <RadioButton
-            android:id="@+id/login_radioClash"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Clash订阅"
-            android:textSize="14sp"
-            android:textColor="@color/black"
-            android:buttonTint="@color/blue" />
-    </RadioGroup>
-
     <!-- Forgot Password Text -->
     <Button
         android:id="@+id/login_forgotPassword"

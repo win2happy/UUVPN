@@ -67,9 +67,6 @@ class LoginActivity : AppCompatActivity() {
 
         PreferenceManager.init(this)
 
-        // 初始化订阅类型选择
-        initSubscriptionTypeSelection()
-
         binding.togglePasswordVisibility.setOnClickListener {
 
             isPasswordVisible = !isPasswordVisible
@@ -255,47 +252,5 @@ class LoginActivity : AppCompatActivity() {
         }
 
 
-    }
-
-    /**
-     * 初始化订阅类型选择
-     */
-    private fun initSubscriptionTypeSelection() {
-        // 从PreferenceManager读取保存的订阅类型
-        val savedType = PreferenceManager.subscriptionType
-        
-        // 设置默认选中项
-        when (savedType) {
-            PreferenceManager.SUBSCRIPTION_TYPE_V2RAY -> {
-                binding.loginRadioV2ray.isChecked = true
-            }
-            PreferenceManager.SUBSCRIPTION_TYPE_CLASH -> {
-                binding.loginRadioClash.isChecked = true
-            }
-        }
-
-        // 监听订阅类型选择变化
-        binding.loginSubscriptionTypeGroup.setOnCheckedChangeListener { _, checkedId ->
-            val subscriptionType = when (checkedId) {
-                R.id.login_radioV2ray -> {
-                    PreferenceManager.SUBSCRIPTION_TYPE_V2RAY
-                }
-                R.id.login_radioClash -> {
-                    PreferenceManager.SUBSCRIPTION_TYPE_CLASH
-                }
-                else -> PreferenceManager.SUBSCRIPTION_TYPE_V2RAY
-            }
-            
-            // 保存选择的订阅类型
-            PreferenceManager.subscriptionType = subscriptionType
-            
-            // 显示提示信息
-            val message = if (subscriptionType == PreferenceManager.SUBSCRIPTION_TYPE_CLASH) {
-                "已选择 Clash 订阅类型，订阅链接将直接使用"
-            } else {
-                "已选择 V2Ray 订阅类型，订阅链接将自动转换为 Clash 格式"
-            }
-            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-        }
     }
 }

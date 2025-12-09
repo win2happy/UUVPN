@@ -6,6 +6,7 @@ import com.github.kr328.clash.core.model.FetchStatus
 import com.github.kr328.clash.design.databinding.DesignPropertiesBinding
 import com.github.kr328.clash.design.dialog.ModelProgressBarConfigure
 import com.github.kr328.clash.design.dialog.requestModelTextInput
+import com.github.kr328.clash.design.dialog.requestUrlWithSubscriptionType
 import com.github.kr328.clash.design.dialog.withModelProgressBar
 import com.github.kr328.clash.design.util.*
 import com.github.kr328.clash.service.model.Profile
@@ -107,7 +108,7 @@ class PropertiesDesign(context: Context) : Design<PropertiesDesign.Request>(cont
             return
 
         launch {
-            val url = context.requestModelTextInput(
+            val result = context.requestUrlWithSubscriptionType(
                 initial = profile.source,
                 title = context.getText(R.string.url),
                 hint = context.getText(R.string.profile_url),
@@ -115,8 +116,12 @@ class PropertiesDesign(context: Context) : Design<PropertiesDesign.Request>(cont
                 validator = ValidatorHttpUrl
             )
 
-            if (url != profile.source) {
-                profile = profile.copy(source = url)
+            if (result != null) {
+                val (url, subscriptionType) = result
+                if (url != profile.source) {
+                    profile = profile.copy(source = url)
+                }
+                // 订阅类型已经在对话框中保存到 PreferenceManager
             }
         }
     }
