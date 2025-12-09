@@ -192,6 +192,20 @@
             android:exported="false"
              />
 
+        <!-- 简化登录界面 -->
+        <activity
+            android:name=".SimpleLoginActivity"
+            android:configChanges="uiMode"
+            android:exported="false"
+            android:label="登录" />
+
+        <!-- 订阅管理界面 -->
+        <activity
+            android:name=".SubscriptionManagerActivity"
+            android:configChanges="uiMode"
+            android:exported="false"
+            android:label="订阅管理" />
+
         <activity
             android:name=".SplashActivity"
             android:configChanges="uiMode"

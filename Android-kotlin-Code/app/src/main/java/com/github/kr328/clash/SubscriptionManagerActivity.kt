@@ -52,31 +52,39 @@ class SubscriptionManagerActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(com.github.kr328.clash.design.R.layout.activity_subscription_manager)
         
-        // 初始化视图
-        backButton = findViewById(com.github.kr328.clash.design.R.id.backButton)
-        usernameText = findViewById(com.github.kr328.clash.design.R.id.usernameText)
-        deviceIdText = findViewById(com.github.kr328.clash.design.R.id.deviceIdText)
-        subscriptionNameText = findViewById(com.github.kr328.clash.design.R.id.subscriptionNameText)
-        subscriptionUrlText = findViewById(com.github.kr328.clash.design.R.id.subscriptionUrlText)
-        subscriptionStatusText = findViewById(com.github.kr328.clash.design.R.id.subscriptionStatusText)
-        lastUpdateText = findViewById(com.github.kr328.clash.design.R.id.lastUpdateText)
-        expireTimeText = findViewById(com.github.kr328.clash.design.R.id.expireTimeText)
-        updateSubscriptionButton = findViewById(com.github.kr328.clash.design.R.id.updateSubscriptionButton)
-        copyUrlButton = findViewById(com.github.kr328.clash.design.R.id.copyUrlButton)
-        trafficUsageText = findViewById(com.github.kr328.clash.design.R.id.trafficUsageText)
-        trafficProgressBar = findViewById(com.github.kr328.clash.design.R.id.trafficProgressBar)
-        uploadText = findViewById(com.github.kr328.clash.design.R.id.uploadText)
-        downloadText = findViewById(com.github.kr328.clash.design.R.id.downloadText)
-        totalTrafficText = findViewById(com.github.kr328.clash.design.R.id.totalTrafficText)
-        resetTrafficButton = findViewById(com.github.kr328.clash.design.R.id.resetTrafficButton)
-        importNewSubscriptionButton = findViewById(com.github.kr328.clash.design.R.id.importNewSubscriptionButton)
+        try {
+            setContentView(com.github.kr328.clash.design.R.layout.activity_subscription_manager)
+            
+            // 初始化偏好管理器
+            SimplePreferenceManager.init(this)
+            
+            // 初始化视图
+            backButton = findViewById(com.github.kr328.clash.design.R.id.backButton)
+            usernameText = findViewById(com.github.kr328.clash.design.R.id.usernameText)
+            deviceIdText = findViewById(com.github.kr328.clash.design.R.id.deviceIdText)
+            subscriptionNameText = findViewById(com.github.kr328.clash.design.R.id.subscriptionNameText)
+            subscriptionUrlText = findViewById(com.github.kr328.clash.design.R.id.subscriptionUrlText)
+            subscriptionStatusText = findViewById(com.github.kr328.clash.design.R.id.subscriptionStatusText)
+            lastUpdateText = findViewById(com.github.kr328.clash.design.R.id.lastUpdateText)
+            expireTimeText = findViewById(com.github.kr328.clash.design.R.id.expireTimeText)
+            updateSubscriptionButton = findViewById(com.github.kr328.clash.design.R.id.updateSubscriptionButton)
+            copyUrlButton = findViewById(com.github.kr328.clash.design.R.id.copyUrlButton)
+            trafficUsageText = findViewById(com.github.kr328.clash.design.R.id.trafficUsageText)
+            trafficProgressBar = findViewById(com.github.kr328.clash.design.R.id.trafficProgressBar)
+            uploadText = findViewById(com.github.kr328.clash.design.R.id.uploadText)
+            downloadText = findViewById(com.github.kr328.clash.design.R.id.downloadText)
+            totalTrafficText = findViewById(com.github.kr328.clash.design.R.id.totalTrafficText)
+            resetTrafficButton = findViewById(com.github.kr328.clash.design.R.id.resetTrafficButton)
+            importNewSubscriptionButton = findViewById(com.github.kr328.clash.design.R.id.importNewSubscriptionButton)
 
-        SimplePreferenceManager.init(this)
-
-        setupViews()
-        loadSubscriptionInfo()
+            setupViews()
+            loadSubscriptionInfo()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(this, "初始化失败: ${e.message}", Toast.LENGTH_LONG).show()
+            finish()
+        }
     }
 
     private fun setupViews() {

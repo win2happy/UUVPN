@@ -36,19 +36,29 @@ class SimpleLoginActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(com.github.kr328.clash.design.R.layout.activity_simple_login)
         
-        // 初始化视图
-        usernameEditText = findViewById(com.github.kr328.clash.design.R.id.usernameEditText)
-        subscribeUrlEditText = findViewById(com.github.kr328.clash.design.R.id.subscribeUrlEditText)
-        togglePasswordVisibility = findViewById(com.github.kr328.clash.design.R.id.togglePasswordVisibility)
-        loginButton = findViewById(com.github.kr328.clash.design.R.id.loginButton)
-        quickImportButton = findViewById(com.github.kr328.clash.design.R.id.quickImportButton)
-        skipLoginButton = findViewById(com.github.kr328.clash.design.R.id.skipLoginButton)
+        try {
+            setContentView(com.github.kr328.clash.design.R.layout.activity_simple_login)
+            
+            // 初始化偏好管理器
+            SimplePreferenceManager.init(this)
+            
+            // 初始化视图
+            usernameEditText = findViewById(com.github.kr328.clash.design.R.id.usernameEditText)
+            subscribeUrlEditText = findViewById(com.github.kr328.clash.design.R.id.subscribeUrlEditText)
+            togglePasswordVisibility = findViewById(com.github.kr328.clash.design.R.id.togglePasswordVisibility)
+            loginButton = findViewById(com.github.kr328.clash.design.R.id.loginButton)
+            quickImportButton = findViewById(com.github.kr328.clash.design.R.id.quickImportButton)
+            skipLoginButton = findViewById(com.github.kr328.clash.design.R.id.skipLoginButton)
 
-        SimplePreferenceManager.init(this)
-
-        setupViews()
+            setupViews()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(this, "初始化失败: ${e.message}", Toast.LENGTH_LONG).show()
+            // 如果简化登录失败，回退到原登录
+            finish()
+            startActivity(Intent(this, LoginActivity::class.java))
+        }
     }
 
     private fun setupViews() {
