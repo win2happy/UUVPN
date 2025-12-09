@@ -6,10 +6,13 @@ import android.text.InputType
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.RadioButton
+import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.github.kr328.clash.common.util.intent
+import com.github.kr328.clash.design.PreferenceManager
 import com.github.kr328.clash.design.SimplePreferenceManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -28,6 +31,9 @@ class SimpleLoginActivity : AppCompatActivity() {
     private lateinit var usernameEditText: EditText
     private lateinit var subscribeUrlEditText: EditText
     private lateinit var togglePasswordVisibility: ImageButton
+    private lateinit var subscriptionTypeGroup: RadioGroup
+    private lateinit var radioV2ray: RadioButton
+    private lateinit var radioClash: RadioButton
     private lateinit var loginButton: Button
     private lateinit var testConnectionButton: Button
     private lateinit var quickImportButton: Button
@@ -52,6 +58,20 @@ class SimpleLoginActivity : AppCompatActivity() {
             testConnectionButton = findViewById(com.github.kr328.clash.design.R.id.testConnectionButton)
             quickImportButton = findViewById(com.github.kr328.clash.design.R.id.quickImportButton)
             skipLoginButton = findViewById(com.github.kr328.clash.design.R.id.skipLoginButton)
+            subscriptionTypeGroup = findViewById(com.github.kr328.clash.design.R.id.subscriptionTypeGroup)
+            radioClash = findViewById(com.github.kr328.clash.design.R.id.radioClash)
+            radioV2ray = findViewById(com.github.kr328.clash.design.R.id.radioV2ray)
+            
+            // 初始化PreferenceManager
+            PreferenceManager.init(this)
+            
+            // 设置默认选中的订阅类型
+            val savedType = PreferenceManager.subscriptionType
+            when (savedType) {
+                PreferenceManager.SUBSCRIPTION_TYPE_V2RAY -> radioV2ray.isChecked = true
+                PreferenceManager.SUBSCRIPTION_TYPE_CLASH -> radioClash.isChecked = true
+                else -> radioV2ray.isChecked = true
+            }
 
             setupViews()
         } catch (e: Exception) {
@@ -124,6 +144,18 @@ class SimpleLoginActivity : AppCompatActivity() {
         // 跳过登录 - 以访客模式使用
         skipLoginButton.setOnClickListener {
             Toast.makeText(this, "访客模式需要先导入订阅链接", Toast.LENGTH_LONG).show()
+        }
+        
+        // 订阅类型选择
+        subscriptionTypeGroup.setOnCheckedChangeListener { _, checkedId ->
+            val selectedType = when (checkedId) {
+                radioClash.id -> "clash"
+                radioV2ray.id -> "v2ray"
+                else -> "clash"
+            }
+            
+            android.util.Log.d("SimpleLogin", "选择的订阅类型: $selectedType")
+            Toast.makeText(this, "已选择订阅类型: $selectedType", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -400,7 +432,15 @@ class SimpleLoginActivity : AppCompatActivity() {
         loginButton.isEnabled = false
         loginButton.text = "验证订阅中..."
         
-        android.util.Log.d("SimpleLogin", "开始验证订阅链接: $subscribeUrl")
+        // 获取并保存用户选择的订阅类型
+        val subscriptionType = when {
+            radioV2ray.isChecked -> PreferenceManager.SUBSCRIPTION_TYPE_V2RAY
+            radioClash.isChecked -> PreferenceManager.SUBSCRIPTION_TYPE_CLASH
+            else -> PreferenceManager.SUBSCRIPTION_TYPE_V2RAY
+        }
+        PreferenceManager.subscriptionType = subscriptionType
+        
+        android.util.Log.d("SimpleLogin", "开始验证订阅链接: $subscribeUrl, 类型: $subscriptionType")
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
