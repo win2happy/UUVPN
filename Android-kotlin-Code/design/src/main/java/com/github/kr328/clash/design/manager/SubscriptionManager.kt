@@ -96,9 +96,33 @@ object SubscriptionManager {
                 val subscriptionType = SubscriptionConverter.detectSubscriptionType(originalContent)
                 android.util.Log.d("SubscriptionManager", "订阅类型: $subscriptionType")
                 
-                // 如果不是Clash配置，尝试转换
-                if (subscriptionType != SubscriptionConverter.SubscriptionType.CLASH) {
-                    android.util.Log.d("SubscriptionManager", "检测到非Clash配置，开始自动转换...")
+                // 获取用户选择的订阅类型
+                val userSubscriptionType = com.github.kr328.clash.design.PreferenceManager.subscriptionType
+                android.util.Log.d("SubscriptionManager", "用户选择的订阅类型: $userSubscriptionType")
+                
+                // 根据用户选择决定是否需要转换
+                val needConversion = when {
+                    // 用户选择的是Clash订阅，检测到也是Clash配置，不需要转换
+                    userSubscriptionType == com.github.kr328.clash.design.PreferenceManager.SUBSCRIPTION_TYPE_CLASH && 
+                    subscriptionType == SubscriptionConverter.SubscriptionType.CLASH -> false
+                    
+                    // 用户选择的是Clash订阅，但检测到不是Clash配置，直接使用原始内容（用户可能想手动处理）
+                    userSubscriptionType == com.github.kr328.clash.design.PreferenceManager.SUBSCRIPTION_TYPE_CLASH -> false
+                    
+                    // 用户选择的是V2Ray订阅，但检测到是Clash配置，不需要转换
+                    userSubscriptionType == com.github.kr328.clash.design.PreferenceManager.SUBSCRIPTION_TYPE_V2RAY &&
+                    subscriptionType == SubscriptionConverter.SubscriptionType.CLASH -> false
+                    
+                    // 用户选择的是V2Ray订阅，检测到也不是Clash配置，需要转换
+                    userSubscriptionType == com.github.kr328.clash.design.PreferenceManager.SUBSCRIPTION_TYPE_V2RAY &&
+                    subscriptionType != SubscriptionConverter.SubscriptionType.CLASH -> true
+                    
+                    else -> false
+                }
+                
+                // 如果需要转换且不是Clash配置，尝试转换
+                if (needConversion) {
+                    android.util.Log.d("SubscriptionManager", "检测到V2Ray订阅，开始自动转换为Clash格式...")
                     try {
                         val convertedContent = SubscriptionConverter.convertToClash(originalContent)
                         android.util.Log.d("SubscriptionManager", "转换成功，Clash配置长度: ${convertedContent.length}")
@@ -107,6 +131,8 @@ object SubscriptionManager {
                         android.util.Log.e("SubscriptionManager", "自动转换失败: ${e.message}", e)
                         throw Exception("订阅格式转换失败: ${e.message}")
                     }
+                } else {
+                    android.util.Log.d("SubscriptionManager", "使用原始订阅内容，无需转换")
                 }
                 
                 originalContent

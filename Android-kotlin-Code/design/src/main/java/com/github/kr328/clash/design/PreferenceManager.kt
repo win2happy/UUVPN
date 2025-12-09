@@ -10,6 +10,10 @@ object PreferenceManager {
 
     private lateinit var prefs: SharedPreferences
 
+    // 订阅类型常量
+    const val SUBSCRIPTION_TYPE_V2RAY = "v2ray"
+    const val SUBSCRIPTION_TYPE_CLASH = "clash"
+
     fun init(context: Context) {
         prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE or Context.MODE_MULTI_PROCESS)
     }
@@ -17,6 +21,13 @@ object PreferenceManager {
     fun clearData(){
         prefs.edit().clear().apply()
     }
+
+    // 订阅类型
+    var subscriptionType: String
+        get() = prefs.getString("subscriptionType", SUBSCRIPTION_TYPE_V2RAY) ?: SUBSCRIPTION_TYPE_V2RAY
+        set(value) {
+            prefs.edit().putString("subscriptionType", value).apply()
+        }
 
     var cached_userSubscritedata: String
         get() = prefs.getString("cached_userSubscritedata", "") ?: ""

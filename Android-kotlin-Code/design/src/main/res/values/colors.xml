@@ -15,9 +15,12 @@
     <color name="gray_light">#E0E0E0</color>
     <color name="white">#FFFFFF</color>
     <color name="blue_gradient">#6495ED</color>
+    <color name="blue_dark">#3A7BD5</color>
+    <color name="blue_light">#5DA8F5</color>
     <color name="black">#000000</color>
     <color name="red">#FFB00020</color>
     <color name="transparent">#20FFFFFF</color>
+    <color name="shadow_color">#30000000</color>
 
     <color name="color_navi">#2f2152</color>
     <color name="color_main_bg">#2a2a2a</color>

@@ -2,22 +2,27 @@
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+<ScrollView
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@color/white">
 
 <LinearLayout
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:orientation="vertical"
     android:gravity="center_horizontal"
-    android:padding="16dp"
-    android:background="@color/white">
+    android:padding="24dp">
 
     <!-- Logo Image -->
     <ImageView
         android:id="@+id/login_logoImage"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
         android:src="@drawable/appstore"
-        android:layout_marginBottom="16dp" />
+        android:layout_marginTop="32dp"
+        android:layout_marginBottom="24dp" />
 
     <!-- Welcome Text -->
     <TextView
@@ -25,7 +30,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="欢迎使用 UUVPN"
-        android:textSize="20sp"
+        android:textSize="28sp"
+        android:textStyle="bold"
         android:textColor="@color/black"
         android:layout_marginBottom="8dp" />
 
@@ -37,66 +43,104 @@
         android:text="全球网络加速服务，注册即享免费试用"
         android:textSize="14sp"
         android:textColor="@color/gray"
-        android:layout_marginBottom="24dp" />
+        android:layout_marginBottom="32dp" />
 
     <!-- Email Input -->
     <EditText
         android:id="@+id/login_emailEditText"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="56dp"
         android:hint="请输入邮箱地址"
         android:inputType="textEmailAddress"
         android:drawableStart="@drawable/mail_24px"
-        android:padding="12dp"
+        android:padding="16dp"
         android:textColor="@color/black"
         android:textColorHint="@color/gray"
         android:background="@drawable/rounded_edittext"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:drawableTint="@color/gray"
-        android:drawablePadding="10dp"
-        android:textSize="14sp"
-        android:layout_marginBottom="8dp" />
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:drawableTint="@color/blue"
+        android:drawablePadding="12dp"
+        android:textSize="16sp"
+        android:layout_marginBottom="16dp" />
 
     <!-- Password Input -->
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
+        android:layout_marginBottom="16dp"
         android:orientation="horizontal">
 
     <EditText
         android:id="@+id/login_passwordEditText"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="56dp"
         android:hint="请输入密码"
-        android:textSize="14sp"
-        android:drawablePadding="10dp"
+        android:textSize="16sp"
+        android:drawablePadding="12dp"
         android:textColorHint="@color/gray"
-        android:drawableTint="@color/gray"
-
+        android:drawableTint="@color/blue"
         android:drawableStart="@drawable/lock_24px"
         android:inputType="textPassword"
-        android:padding="12dp"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-
+        android:padding="16dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="48dp"
         android:textColor="@color/black"
-        android:background="@drawable/rounded_edittext"
-         />
+        android:background="@drawable/rounded_edittext" />
 
         <ImageView
             android:id="@+id/togglePasswordVisibility"
-            android:layout_width="44dp"
-            android:layout_height="wrap_content"
-            android:layout_marginRight="1dp"
-            android:layout_gravity="right"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginRight="4dp"
+            android:layout_gravity="center_vertical|end"
             android:clickable="true"
-
             android:focusable="true"
             android:padding="12dp"
             android:src="@drawable/ic_visibility_off_24px"/>
     </FrameLayout>
+
+    <!-- 订阅类型选择 -->
+    <TextView
+        android:id="@+id/login_subscriptionTypeLabel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="订阅链接类型"
+        android:textSize="14sp"
+        android:textColor="@color/black"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp" />
+
+    <RadioGroup
+        android:id="@+id/login_subscriptionTypeGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/rounded_edittext"
+        android:padding="8dp">
+
+        <RadioButton
+            android:id="@+id/login_radioV2ray"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="V2Ray订阅"
+            android:textSize="14sp"
+            android:textColor="@color/black"
+            android:checked="true"
+            android:buttonTint="@color/blue" />
+
+        <RadioButton
+            android:id="@+id/login_radioClash"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Clash订阅"
+            android:textSize="14sp"
+            android:textColor="@color/black"
+            android:buttonTint="@color/blue" />
+    </RadioGroup>
 
     <!-- Forgot Password Text -->
     <Button
@@ -106,30 +150,32 @@
         android:text="忘记密码？"
         android:textSize="14sp"
         android:textColor="@color/blue"
-android:visibility="gone"
+        android:visibility="gone"
         android:background="?android:attr/selectableItemBackground"
         android:layout_gravity="end"
-        android:layout_marginBottom="16dp" />
+        android:layout_marginBottom="8dp" />
 
     <!-- Agreement Checkbox -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="24dp">
         <CheckBox
             android:id="@+id/login_agreementCheckBox"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="同意"
-            android:textSize="12sp"
+            android:textSize="13sp"
             android:textColor="@color/black"
-            android:layout_marginBottom="24dp" />
+            android:buttonTint="@color/blue" />
 
         <Button
             android:id="@+id/login_privacy"
             android:layout_width="wrap_content"
-            android:textSize="12sp"
-            android:textColor="@color/black"
-            android:padding="0dp"
+            android:textSize="13sp"
+            android:textColor="@color/blue"
+            android:padding="4dp"
             android:layout_height="wrap_content"
             android:text="《隐私政策》及《用户协议》"
             android:background="?android:attr/selectableItemBackground" />
@@ -139,45 +185,54 @@ android:visibility="gone"
     <Button
         android:id="@+id/login_loginButton"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="56dp"
         android:text="登 录"
-        android:backgroundTint="@color/blue_gradient"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:background="@drawable/button_login_background"
         android:textColor="@color/white"
+        android:elevation="4dp"
+        android:stateListAnimator="@null"
         android:layout_marginBottom="16dp" />
 
     <!-- Register Text -->
-    <Button
-        android:id="@+id/login_register"
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="没有账户？注册"
-        android:background="?android:attr/selectableItemBackground"
-        android:textSize="14sp"
-        android:textColor="@color/blue"
-        android:layout_marginTop="8dp" />
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginTop="8dp">
+        
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="没有账户？"
+            android:textSize="14sp"
+            android:textColor="@color/gray" />
+        
+        <Button
+            android:id="@+id/login_register"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="立即注册"
+            android:background="?android:attr/selectableItemBackground"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/blue"
+            android:padding="4dp" />
+    </LinearLayout>
 
     <!-- Footer -->
-
-
-    <RelativeLayout
+    <TextView
+        android:id="@+id/login_footerText"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <!-- 你的其他布局组件 -->
-
-        <!-- Footer -->
-        <TextView
-            android:id="@+id/login_footerText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="© 2024 · UUVPN"
-            android:textSize="12sp"
-            android:textColor="@color/gray"
-            android:layout_marginTop="32dp"
-            android:gravity="center"
-            android:layout_alignParentBottom="true" />
-
-    </RelativeLayout>
+        android:layout_height="wrap_content"
+        android:text="© 2024 · UUVPN"
+        android:textSize="12sp"
+        android:textColor="@color/gray_light"
+        android:layout_marginTop="32dp"
+        android:gravity="center" />
 
 </LinearLayout>
+</ScrollView>
 </layout>
