@@ -90,14 +90,14 @@ class MainActivity : BaseActivity<MainDesign>() {
             // 判断是简化登录还是V2Board登录
             if (SimplePreferenceManager.isLoggedIn) {
                 // 简化登录模式 - 直接导入订阅链接
-                Log.d("MainActivity", "使用简化登录模式")
+                android.util.Log.d("MainActivity", "使用简化登录模式")
                 android.util.Log.d("MainActivity", "简化登录模式 - 订阅URL: ${SimplePreferenceManager.localUser?.subscribeUrl}")
                 
                 // 导入订阅链接到配置
                 importSimpleSubscription()
             } else {
                 // V2Board登录模式 - 使用原有的API请求流程
-                Log.d("MainActivity", "使用V2Board登录模式")
+                android.util.Log.d("MainActivity", "使用V2Board登录模式")
                 
                 //1 : 查询 config 信息
                 apiService = ApiClientConfig.retrofit.create(ApiService::class.java)
