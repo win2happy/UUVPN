@@ -130,14 +130,28 @@ object SubscriptionConverter {
         
         // 尝试Base64解码
         val decodedContent = try {
-            if (content.contains("vmess://") || content.contains("vless://")) {
+            if (content.contains("://")) {
+                // 已经是链接格式，无需解码
                 content
             } else {
-                String(Base64.decode(content.trim(), Base64.DEFAULT))
+                // 尝试Base64解码
+                try {
+                    val decoded = String(Base64.decode(content.trim(), Base64.DEFAULT))
+                    if (decoded.contains("://")) {
+                        decoded
+                    } else {
+                        content
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Base64解码失败，尝试直接解析: ${e.message}")
+                    content
+                }
             }
         } catch (e: Exception) {
             content
         }
+        
+        Log.d(TAG, "待解析内容前100字符: ${decodedContent.take(100)}")
         
         // 按行分割
         val lines = decodedContent.split("\n", "\r\n", "\r")
@@ -150,38 +164,55 @@ object SubscriptionConverter {
                 when {
                     // VMess协议
                     trimmedLine.startsWith("vmess://") -> {
+                        Log.d(TAG, "解析VMess节点")
                         val proxy = parseVmess(trimmedLine)
                         if (proxy != null) {
                             proxies.add(proxy)
                             proxyNames.add(proxy["name"] as String)
+                            Log.d(TAG, "成功解析VMess节点: ${proxy["name"]}")
                         }
                     }
                     
                     // VLess协议
                     trimmedLine.startsWith("vless://") -> {
+                        Log.d(TAG, "解析VLess节点")
                         val proxy = parseVless(trimmedLine)
                         if (proxy != null) {
                             proxies.add(proxy)
                             proxyNames.add(proxy["name"] as String)
+                            Log.d(TAG, "成功解析VLess节点: ${proxy["name"]}")
                         }
                     }
                     
                     // Trojan协议
                     trimmedLine.startsWith("trojan://") -> {
+                        Log.d(TAG, "解析Trojan节点")
                         val proxy = parseTrojan(trimmedLine)
                         if (proxy != null) {
                             proxies.add(proxy)
                             proxyNames.add(proxy["name"] as String)
+                            Log.d(TAG, "成功解析Trojan节点: ${proxy["name"]}")
+                        }
+                    }
+                    
+                    // Shadowsocks协议
+                    trimmedLine.startsWith("ss://") -> {
+                        Log.d(TAG, "解析SS节点")
+                        val proxy = parseShadowsocks(trimmedLine)
+                        if (proxy != null) {
+                            proxies.add(proxy)
+                            proxyNames.add(proxy["name"] as String)
+                            Log.d(TAG, "成功解析SS节点: ${proxy["name"]}")
                         }
                     }
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "解析节点失败: ${e.message}")
+                Log.w(TAG, "解析节点失败: ${e.message}", e)
             }
         }
         
         if (proxies.isEmpty()) {
-            throw Exception("未找到有效的代理节点")
+            throw Exception("未找到有效的代理节点，请检查订阅链接格式")
         }
         
         Log.d(TAG, "成功解析 ${proxies.size} 个节点")
@@ -335,27 +366,58 @@ object SubscriptionConverter {
      */
     private fun parseVless(vlessUrl: String): Map<String, Any>? {
         try {
+            Log.d(TAG, "开始解析VLess: ${vlessUrl.take(50)}...")
+            
             // vless://uuid@server:port?参数#备注
+            if (!vlessUrl.startsWith("vless://")) {
+                Log.e(TAG, "不是有效的VLess链接")
+                return null
+            }
+            
             val url = vlessUrl.substring(8) // 移除 "vless://"
             val parts = url.split("@")
-            if (parts.size != 2) return null
+            if (parts.size != 2) {
+                Log.e(TAG, "VLess链接格式错误，缺少@分隔符")
+                return null
+            }
             
-            val uuid = parts[0]
+            val uuid = parts[0].trim()
             val remaining = parts[1]
             
             // 分离备注
             val withoutRemark = remaining.substringBefore("#")
-            val remark = remaining.substringAfter("#", "VLess节点")
+            val remarkEncoded = if (remaining.contains("#")) {
+                remaining.substringAfter("#")
+            } else {
+                ""
+            }
+            val remark = try {
+                if (remarkEncoded.isNotEmpty()) {
+                    URLDecoder.decode(remarkEncoded, "UTF-8")
+                } else {
+                    "VLess节点"
+                }
+            } catch (e: Exception) {
+                remarkEncoded.ifEmpty { "VLess节点" }
+            }
             
             val serverParts = withoutRemark.split("?")
             val serverAndPort = serverParts[0].split(":")
-            if (serverAndPort.size != 2) return null
+            if (serverAndPort.size < 2) {
+                Log.e(TAG, "VLess链接格式错误，server:port格式不正确")
+                return null
+            }
             
-            val server = serverAndPort[0]
-            val port = serverAndPort[1].toIntOrNull() ?: 443
+            val server = serverAndPort[0].trim()
+            val port = serverAndPort[1].trim().toIntOrNull() ?: 443
+            
+            if (server.isEmpty() || uuid.isEmpty()) {
+                Log.e(TAG, "VLess链接格式错误，server或uuid为空")
+                return null
+            }
             
             val proxy = mutableMapOf<String, Any>()
-            proxy["name"] = URLDecoder.decode(remark, "UTF-8")
+            proxy["name"] = remark
             proxy["type"] = "vless"
             proxy["server"] = server
             proxy["port"] = port
@@ -502,27 +564,62 @@ object SubscriptionConverter {
      */
     private fun parseTrojan(trojanUrl: String): Map<String, Any>? {
         try {
+            Log.d(TAG, "开始解析Trojan: ${trojanUrl.take(50)}...")
+            
             // trojan://password@server:port?参数#备注
+            if (!trojanUrl.startsWith("trojan://")) {
+                Log.e(TAG, "不是有效的Trojan链接")
+                return null
+            }
+            
             val url = trojanUrl.substring(9) // 移除 "trojan://"
             val parts = url.split("@")
-            if (parts.size != 2) return null
+            if (parts.size != 2) {
+                Log.e(TAG, "Trojan链接格式错误，缺少@分隔符")
+                return null
+            }
             
-            val password = URLDecoder.decode(parts[0], "UTF-8")
+            val password = try {
+                URLDecoder.decode(parts[0].trim(), "UTF-8")
+            } catch (e: Exception) {
+                parts[0].trim()
+            }
             val remaining = parts[1]
             
             // 分离备注
             val withoutRemark = remaining.substringBefore("#")
-            val remark = remaining.substringAfter("#", "Trojan节点")
+            val remarkEncoded = if (remaining.contains("#")) {
+                remaining.substringAfter("#")
+            } else {
+                ""
+            }
+            val remark = try {
+                if (remarkEncoded.isNotEmpty()) {
+                    URLDecoder.decode(remarkEncoded, "UTF-8")
+                } else {
+                    "Trojan节点"
+                }
+            } catch (e: Exception) {
+                remarkEncoded.ifEmpty { "Trojan节点" }
+            }
             
             val serverParts = withoutRemark.split("?")
             val serverAndPort = serverParts[0].split(":")
-            if (serverAndPort.size != 2) return null
+            if (serverAndPort.size < 2) {
+                Log.e(TAG, "Trojan链接格式错误，server:port格式不正确")
+                return null
+            }
             
-            val server = serverAndPort[0]
-            val port = serverAndPort[1].toIntOrNull() ?: 443
+            val server = serverAndPort[0].trim()
+            val port = serverAndPort[1].trim().toIntOrNull() ?: 443
+            
+            if (server.isEmpty() || password.isEmpty()) {
+                Log.e(TAG, "Trojan链接格式错误，server或password为空")
+                return null
+            }
             
             val proxy = mutableMapOf<String, Any>()
-            proxy["name"] = URLDecoder.decode(remark, "UTF-8")
+            proxy["name"] = remark
             proxy["type"] = "trojan"
             proxy["server"] = server
             proxy["port"] = port
