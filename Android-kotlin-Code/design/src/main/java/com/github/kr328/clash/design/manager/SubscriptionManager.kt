@@ -3,6 +3,7 @@ package com.github.kr328.clash.design.manager
 import android.content.Context
 import com.github.kr328.clash.design.SimplePreferenceManager
 import com.github.kr328.clash.design.model.SubscriptionInfo
+import com.github.kr328.clash.design.util.SubscriptionConverter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.URL
@@ -76,7 +77,7 @@ object SubscriptionManager {
     }
 
     /**
-     * 获取订阅内容
+     * 获取订阅内容（支持自动转换）
      */
     suspend fun fetchSubscriptionContent(url: String): String {
         return withContext(Dispatchers.IO) {
@@ -87,10 +88,28 @@ object SubscriptionManager {
                 connection.setRequestProperty("User-Agent", "ClashForAndroid/UUVPN")
                 connection.setRequestProperty("Accept", "*/*")
                 
-                val content = connection.getInputStream().bufferedReader().use { it.readText() }
+                val originalContent = connection.getInputStream().bufferedReader().use { it.readText() }
                 
-                android.util.Log.d("SubscriptionManager", "成功获取订阅内容，长度: ${content.length}")
-                content
+                android.util.Log.d("SubscriptionManager", "成功获取订阅内容，长度: ${originalContent.length}")
+                
+                // 检测订阅类型
+                val subscriptionType = SubscriptionConverter.detectSubscriptionType(originalContent)
+                android.util.Log.d("SubscriptionManager", "订阅类型: $subscriptionType")
+                
+                // 如果不是Clash配置，尝试转换
+                if (subscriptionType != SubscriptionConverter.SubscriptionType.CLASH) {
+                    android.util.Log.d("SubscriptionManager", "检测到非Clash配置，开始自动转换...")
+                    try {
+                        val convertedContent = SubscriptionConverter.convertToClash(originalContent)
+                        android.util.Log.d("SubscriptionManager", "转换成功，Clash配置长度: ${convertedContent.length}")
+                        return@withContext convertedContent
+                    } catch (e: Exception) {
+                        android.util.Log.e("SubscriptionManager", "自动转换失败: ${e.message}", e)
+                        throw Exception("订阅格式转换失败: ${e.message}")
+                    }
+                }
+                
+                originalContent
             } catch (e: Exception) {
                 android.util.Log.e("SubscriptionManager", "获取订阅内容失败: ${e.message}", e)
                 throw e
@@ -103,12 +122,9 @@ object SubscriptionManager {
      */
     private fun isValidClashConfig(content: String): Boolean {
         return try {
-            // 检查必要的字段
-            content.contains("proxies:") || 
-            content.contains("proxy-groups:") ||
-            content.contains("\"proxies\"") ||
-            content.contains("\"proxy-groups\"") ||
-            content.contains("rules:")
+            // 使用转换器检测，如果能识别就认为有效
+            val type = SubscriptionConverter.detectSubscriptionType(content)
+            type != SubscriptionConverter.SubscriptionType.UNKNOWN
         } catch (e: Exception) {
             false
         }

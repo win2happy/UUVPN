@@ -136,6 +136,16 @@ class SimpleLoginActivity : AppCompatActivity() {
         }
     }
 
+    private fun getSubscriptionTypeName(type: com.github.kr328.clash.design.util.SubscriptionConverter.SubscriptionType): String {
+        return when (type) {
+            com.github.kr328.clash.design.util.SubscriptionConverter.SubscriptionType.CLASH -> "Clash"
+            com.github.kr328.clash.design.util.SubscriptionConverter.SubscriptionType.V2RAY_BASE64 -> "V2Ray"
+            com.github.kr328.clash.design.util.SubscriptionConverter.SubscriptionType.V2RAY_JSON -> "V2Ray JSON"
+            com.github.kr328.clash.design.util.SubscriptionConverter.SubscriptionType.SHADOWSOCKS -> "Shadowsocks"
+            com.github.kr328.clash.design.util.SubscriptionConverter.SubscriptionType.UNKNOWN -> "未知"
+        }
+    }
+
     private fun testConnection(url: String) {
         testConnectionButton.isEnabled = false
         testConnectionButton.text = "测试中..."
@@ -172,60 +182,118 @@ class SimpleLoginActivity : AppCompatActivity() {
                 
                 // 步骤3: 获取内容
                 stepInfo = "获取订阅内容"
-                val content = connection.getInputStream().bufferedReader().use { it.readText() }
+                val originalContent = connection.getInputStream().bufferedReader().use { it.readText() }
                 val elapsed = System.currentTimeMillis() - startTime
                 
-                android.util.Log.d("SimpleLogin", "✓ 成功获取内容，大小: ${content.length} 字节，耗时: ${elapsed}ms")
+                android.util.Log.d("SimpleLogin", "✓ 成功获取内容，大小: ${originalContent.length} 字节，耗时: ${elapsed}ms")
                 
-                // 步骤4: 验证内容
-                stepInfo = "验证Clash配置"
-                val isValid = content.contains("proxies:") || 
-                              content.contains("proxy-groups:") ||
-                              content.contains("\"proxies\"") ||
-                              content.contains("\"proxy-groups\"") ||
-                              content.contains("rules:")
+                // 步骤4: 检测订阅类型
+                stepInfo = "检测订阅类型"
+                val subscriptionType = com.github.kr328.clash.design.util.SubscriptionConverter.detectSubscriptionType(originalContent)
+                android.util.Log.d("SimpleLogin", "检测到订阅类型: $subscriptionType")
+                
+                // 步骤5: 转换（如果需要）
+                var finalContent = originalContent
+                var convertedFrom: String? = null
+                
+                if (subscriptionType != com.github.kr328.clash.design.util.SubscriptionConverter.SubscriptionType.CLASH) {
+                    stepInfo = "转换订阅格式"
+                    android.util.Log.d("SimpleLogin", "开始自动转换订阅...")
+                    
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                            this@SimpleLoginActivity,
+                            "检测到 ${getSubscriptionTypeName(subscriptionType)} 格式，正在自动转换...",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                    
+                    try {
+                        finalContent = com.github.kr328.clash.design.util.SubscriptionConverter.convertToClash(originalContent)
+                        convertedFrom = getSubscriptionTypeName(subscriptionType)
+                        android.util.Log.d("SimpleLogin", "✓ 转换成功，Clash配置长度: ${finalContent.length}")
+                    } catch (e: Exception) {
+                        android.util.Log.e("SimpleLogin", "✗ 转换失败: ${e.message}", e)
+                        withContext(Dispatchers.Main) {
+                            android.app.AlertDialog.Builder(this@SimpleLoginActivity)
+                                .setTitle("❌ 订阅转换失败")
+                                .setMessage(
+                                    "检测到 ${getSubscriptionTypeName(subscriptionType)} 格式订阅，" +
+                                    "但转换失败。\n\n" +
+                                    "错误信息: ${e.message}\n\n" +
+                                    "建议:\n" +
+                                    "• 向服务商索取Clash格式订阅\n" +
+                                    "• 使用在线订阅转换服务\n" +
+                                    "• 检查订阅链接是否正确"
+                                )
+                                .setPositiveButton("确定", null)
+                                .show()
+                        }
+                        return@withContext
+                    }
+                }
+                
+                // 验证最终配置
+                val isValid = finalContent.contains("proxies:") || 
+                              finalContent.contains("proxy-groups:") ||
+                              finalContent.contains("\"proxies\"") ||
+                              finalContent.contains("\"proxy-groups\"")
                 
                 withContext(Dispatchers.Main) {
                     if (isValid) {
-                        android.util.Log.d("SimpleLogin", "✓ 验证成功: 这是有效的Clash配置")
+                        android.util.Log.d("SimpleLogin", "✓ 验证成功: Clash配置有效")
                         
                         val resultMessage = buildString {
                             append("✅ 测试成功！\n\n")
                             append("📊 详细信息:\n")
                             append("• 连接时间: ${elapsed}ms\n")
-                            append("• 内容大小: ${content.length} 字节\n")
-                            append("• 配置格式: Clash\n")
+                            append("• 原始大小: ${originalContent.length} 字节\n")
+                            
+                            if (convertedFrom != null) {
+                                append("• 原始格式: $convertedFrom\n")
+                                append("• 已自动转换为Clash格式\n")
+                                append("• 转换后大小: ${finalContent.length} 字节\n")
+                            } else {
+                                append("• 配置格式: Clash（无需转换）\n")
+                            }
                             
                             // 统计代理节点数量
-                            val proxyCount = content.lines().count { 
-                                it.trim().startsWith("- name:") || it.trim().startsWith("\"name\":")
+                            val proxyCount = finalContent.lines().count { 
+                                it.trim().startsWith("- name:") || 
+                                it.trim().startsWith("\"name\":")
                             }
                             if (proxyCount > 0) {
                                 append("• 节点数量: 约 $proxyCount 个\n")
                             }
                             
-                            append("\n可以放心使用此订阅链接！")
+                            append("\n")
+                            if (convertedFrom != null) {
+                                append("✨ 已自动转换，可以直接使用！")
+                            } else {
+                                append("可以放心使用此订阅链接！")
+                            }
                         }
                         
                         android.app.AlertDialog.Builder(this@SimpleLoginActivity)
-                            .setTitle("连接测试成功")
+                            .setTitle(if (convertedFrom != null) "🔄 转换成功" else "✅ 测试成功")
                             .setMessage(resultMessage)
                             .setPositiveButton("确定", null)
                             .show()
                     } else {
-                        android.util.Log.w("SimpleLogin", "⚠ 内容不是有效的Clash配置")
-                        android.util.Log.w("SimpleLogin", "内容预览: ${content.take(200)}")
+                        android.util.Log.w("SimpleLogin", "⚠ 验证失败")
+                        android.util.Log.w("SimpleLogin", "内容预览: ${finalContent.take(200)}")
                         
-                        val preview = content.take(200).replace("<", "&lt;").replace(">", "&gt;")
+                        val preview = finalContent.take(200).replace("<", "&lt;").replace(">", "&gt;")
                         
                         android.app.AlertDialog.Builder(this@SimpleLoginActivity)
-                            .setTitle("⚠️ 订阅内容异常")
+                            .setTitle("⚠️ 订阅验证失败")
                             .setMessage(
-                                "成功连接到服务器，但返回的内容不是有效的Clash配置文件。\n\n" +
+                                "获取到订阅内容，但验证失败。\n\n" +
+                                (if (convertedFrom != null) "尝试从 $convertedFrom 转换，但转换结果无效。\n\n" else "") +
                                 "可能的原因:\n" +
-                                "1. 这是其他格式的订阅（V2Ray/SS等）\n" +
-                                "2. 订阅链接已过期或无效\n" +
-                                "3. 服务器返回了错误页面\n\n" +
+                                "1. 订阅链接已过期或无效\n" +
+                                "2. 服务器返回了错误页面\n" +
+                                "3. 订阅格式不被支持\n\n" +
                                 "内容预览:\n$preview..."
                             )
                             .setPositiveButton("确定", null)
@@ -386,17 +454,58 @@ class SimpleLoginActivity : AppCompatActivity() {
                 connection.setRequestProperty("Accept", "*/*")
                 
                 // 连接并获取内容
-                val content = connection.getInputStream().bufferedReader().use { it.readText() }
+                val originalContent = connection.getInputStream().bufferedReader().use { it.readText() }
                 
-                // 验证是否是有效的Clash配置
-                val isValid = content.contains("proxies:") || 
-                              content.contains("proxy-groups:") ||
-                              content.contains("\"proxies\"") ||
-                              content.contains("\"proxy-groups\"") ||
-                              content.contains("rules:")
+                // 检测订阅类型
+                val subscriptionType = com.github.kr328.clash.design.util.SubscriptionConverter.detectSubscriptionType(originalContent)
+                android.util.Log.d("SimpleLogin", "订阅类型: $subscriptionType")
                 
-                if (!isValid) {
-                    android.util.Log.e("SimpleLogin", "订阅内容验证失败，内容前100字符: ${content.take(100)}")
+                // 如果不是Clash格式，尝试转换
+                val finalContent = if (subscriptionType != com.github.kr328.clash.design.util.SubscriptionConverter.SubscriptionType.CLASH) {
+                    android.util.Log.d("SimpleLogin", "检测到 ${getSubscriptionTypeName(subscriptionType)} 格式，尝试自动转换...")
+                    
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                            this@SimpleLoginActivity,
+                            "检测到 ${getSubscriptionTypeName(subscriptionType)} 格式，正在转换...",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                    
+                    try {
+                        com.github.kr328.clash.design.util.SubscriptionConverter.convertToClash(originalContent)
+                    } catch (e: Exception) {
+                        android.util.Log.e("SimpleLogin", "转换失败: ${e.message}", e)
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(
+                                this@SimpleLoginActivity,
+                                "订阅转换失败: ${e.message}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                        return@withContext false
+                    }
+                } else {
+                    originalContent
+                }
+                
+                // 验证最终内容
+                val isValid = finalContent.contains("proxies:") || 
+                              finalContent.contains("proxy-groups:") ||
+                              finalContent.contains("\"proxies\"") ||
+                              finalContent.contains("\"proxy-groups\"")
+                
+                if (isValid && subscriptionType != com.github.kr328.clash.design.util.SubscriptionConverter.SubscriptionType.CLASH) {
+                    android.util.Log.d("SimpleLogin", "✓ ${getSubscriptionTypeName(subscriptionType)} 转换为Clash成功")
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                            this@SimpleLoginActivity,
+                            "✓ 已自动转换为Clash格式",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                } else if (!isValid) {
+                    android.util.Log.e("SimpleLogin", "订阅内容验证失败，内容前100字符: ${finalContent.take(100)}")
                 }
                 
                 isValid
