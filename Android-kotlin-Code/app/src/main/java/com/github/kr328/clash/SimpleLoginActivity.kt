@@ -58,10 +58,10 @@ class SimpleLoginActivity : AppCompatActivity() {
             
             if (isPasswordVisible) {
                 subscribeUrlEditText.inputType = InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
-                togglePasswordVisibility.setImageResource(com.github.kr328.clash.design.R.drawable.visibility_24px)
+                togglePasswordVisibility.setImageResource(R.drawable.visibility_24px)
             } else {
                 subscribeUrlEditText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-                togglePasswordVisibility.setImageResource(com.github.kr328.clash.design.R.drawable.visibility_off_24px)
+                togglePasswordVisibility.setImageResource(R.drawable.visibility_off_24px)
             }
             subscribeUrlEditText.setSelection(subscribeUrlEditText.text.length)
         }
