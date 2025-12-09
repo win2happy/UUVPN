@@ -904,13 +904,28 @@ class MainActivity : BaseActivity<MainDesign>() {
 
             android.util.Log.d("MainActivity", "成功获取订阅内容，长度: ${subscriptionContent.length}")
 
-            // 创建并导入配置
+            // 【重要】保存订阅内容到临时文件，并准备导入
+            // 之所以使用File类型而不是URL类型，是因为：
+            // 1. subscriptionContent已经由SubscriptionManager.fetchSubscriptionContent()处理并转换
+            //    （V2Ray/SS等格式已自动转换为Clash格式）
+            // 2. 如果使用URL类型，ProfileProcessor会重新从URL获取内容，导致未转换的V2Ray内容
+            //    被直接解析为YAML，引发 "cannot unmarshal !!str `vless://...` into config.RawConfig" 错误
+            // 3. 使用File类型可以确保使用已转换的内容，避免格式转换问题
+            val tempConfigFile = withContext(Dispatchers.IO) {
+                val file = java.io.File(cacheDir, "subscription_${System.currentTimeMillis()}.yaml")
+                file.writeText(subscriptionContent)
+                android.util.Log.d("MainActivity", "已保存订阅内容到: ${file.absolutePath}")
+                file
+            }
+
+            // 创建并导入配置 - 使用File类型而不是URL类型，避免重新获取
             val uuid = withProfile {
-                val type = Profile.Type.Url
+                val type = Profile.Type.File
                 val name = user.username
+                val fileUri = android.net.Uri.fromFile(tempConfigFile)
                 
                 create(type, name).also {
-                    patch(it, name, user.subscribeUrl, 0)
+                    patch(it, name, fileUri.toString(), 0)
                 }
             }
 
@@ -927,8 +942,27 @@ class MainActivity : BaseActivity<MainDesign>() {
                             }
                         }
                         android.util.Log.d("MainActivity", "配置激活成功")
+                        
+                        // 清理临时文件
+                        withContext(Dispatchers.IO) {
+                            try {
+                                tempConfigFile.delete()
+                            } catch (e: Exception) {
+                                android.util.Log.w("MainActivity", "清理临时文件失败: ${e.message}")
+                            }
+                        }
                     } catch (e: Exception) {
                         android.util.Log.e("MainActivity", "配置提交失败: ${e.message}", e)
+                        
+                        // 清理临时文件
+                        withContext(Dispatchers.IO) {
+                            try {
+                                tempConfigFile.delete()
+                            } catch (ex: Exception) {
+                                android.util.Log.w("MainActivity", "清理临时文件失败: ${ex.message}")
+                            }
+                        }
+                        
                         withContext(Dispatchers.Main) {
                             LoadingDialog.hide()
                             showCustomDialog(
