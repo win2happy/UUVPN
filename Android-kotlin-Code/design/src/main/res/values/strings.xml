@@ -342,4 +342,30 @@
     <string name="parse_pure_ip">Parse Pure IP</string>
     <string name="override_destination">Override Destination</string>
     <string name="github_issues_zeus">https://github.com/nicolastinkl</string>
+    
+    <!-- Simple Login Strings -->
+    <string name="simple_login_title">本地登录</string>
+    <string name="simple_login_username_hint">用户名或昵称</string>
+    <string name="simple_login_subscribe_hint">订阅链接 (Clash/V2Ray)</string>
+    <string name="simple_login_button">登录并导入订阅</string>
+    <string name="simple_login_quick_import">从剪贴板导入</string>
+    <string name="simple_login_skip">暂时跳过</string>
+    <string name="simple_login_tip">无需注册账号，导入订阅链接即可使用</string>
+    <string name="simple_login_local_only">所有数据仅保存在本地设备</string>
+    
+    <!-- Subscription Manager -->
+    <string name="subscription_import_success">订阅导入成功</string>
+    <string name="subscription_import_failed">订阅导入失败</string>
+    <string name="subscription_update_success">订阅更新成功</string>
+    <string name="subscription_update_failed">订阅更新失败</string>
+    <string name="subscription_expired">订阅已过期</string>
+    <string name="subscription_traffic_exceeded">流量已用完</string>
+    <string name="subscription_normal">订阅正常</string>
+    
+    <!-- Traffic Stats -->
+    <string name="traffic_upload">上传</string>
+    <string name="traffic_download">下载</string>
+    <string name="traffic_total">总计</string>
+    <string name="traffic_reset">重置统计</string>
+    <string name="traffic_reset_confirm">确定要重置流量统计吗？</string>
 </resources>

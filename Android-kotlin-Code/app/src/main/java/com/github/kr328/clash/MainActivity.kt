@@ -12,6 +12,7 @@ import com.github.kr328.clash.common.util.setUUID
 import com.github.kr328.clash.common.util.ticker
 import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.design.MainDesign
+import com.github.kr328.clash.design.SimplePreferenceManager
 import com.github.kr328.clash.design.ui.ToastDuration
 import com.github.kr328.clash.util.startClashService
 import com.github.kr328.clash.util.stopClashService
@@ -76,7 +77,11 @@ class MainActivity : BaseActivity<MainDesign>() {
     override suspend fun main() {
         val design = MainDesign(this)
 
-        if (PreferenceManager.isLoginin){
+        // 初始化简化的偏好管理器
+        SimplePreferenceManager.init(this)
+
+        // 检查简化登录状态（优先）或旧的V2Board登录状态（兼容）
+        if (SimplePreferenceManager.isLoggedIn || PreferenceManager.isLoginin){
             setContentDesign(design)
 
             design.fetch()
@@ -280,13 +285,15 @@ class MainActivity : BaseActivity<MainDesign>() {
 
 
         }else{
+            // 使用简化的登录流程
             val binding = ActivitySplashBinding
                 .inflate(this.layoutInflater, this.root, false)
 
             setContentView(binding.root)
 
             Handler(Looper.getMainLooper()).postDelayed({
-                startActivity(LoginActivity::class.intent)
+                // 使用简化登录界面替代原来的V2Board登录
+                startActivity(SimpleLoginActivity::class.intent)
 
             }, 1000) // Simulating a network delay
         }
