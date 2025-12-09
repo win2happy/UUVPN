@@ -79,13 +79,7 @@ class AppSettingsDesign(
             category(R.string.subscription)
 
             selectableList(
-                value = object : MutablePreference<String> {
-                    override var value: String
-                        get() = PreferenceManager.subscriptionType
-                        set(value) {
-                            PreferenceManager.subscriptionType = value
-                        }
-                },
+                value = PreferenceManager::subscriptionType,
                 values = arrayOf(
                     PreferenceManager.SUBSCRIPTION_TYPE_V2RAY,
                     PreferenceManager.SUBSCRIPTION_TYPE_CLASH
@@ -94,9 +88,8 @@ class AppSettingsDesign(
                     R.string.subscription_type_v2ray,
                     R.string.subscription_type_clash
                 ),
-                icon = R.drawable.ic_baseline_file_download,
-                title = R.string.subscription_type,
-                summary = R.string.subscription_type_summary
+                icon = R.drawable.ic_baseline_cloud_download,
+                title = R.string.subscription_type
             )
         }
 
