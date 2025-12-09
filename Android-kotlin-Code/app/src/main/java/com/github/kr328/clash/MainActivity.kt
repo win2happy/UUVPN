@@ -91,7 +91,7 @@ class MainActivity : BaseActivity<MainDesign>() {
             if (SimplePreferenceManager.isLoggedIn) {
                 // 简化登录模式 - 直接导入订阅链接
                 Log.d("MainActivity", "使用简化登录模式")
-                android.util.Log.d("MainActivity", "简化登录模式 - 订阅URL: ${SimplePreferenceManager.currentUser?.subscribeUrl}")
+                android.util.Log.d("MainActivity", "简化登录模式 - 订阅URL: ${SimplePreferenceManager.localUser?.subscribeUrl}")
                 
                 // 导入订阅链接到配置
                 importSimpleSubscription()
@@ -222,7 +222,7 @@ class MainActivity : BaseActivity<MainDesign>() {
                                     }
                                 } catch (e: Exception) {
                                     android.util.Log.e("MainActivity", "打开设置失败: ${e.message}", e)
-                                    showExceptionToast("打开设置失败：${e.message}")
+                                    design.showExceptionToast("打开设置失败：${e.message}")
                                 }
                             }
                             MainDesign.Request.OpenSettingsKEFU -> {
@@ -230,7 +230,7 @@ class MainActivity : BaseActivity<MainDesign>() {
                                     startActivity(PlansActivity::class.intent)
                                 } catch (e: Exception) {
                                     android.util.Log.e("MainActivity", "打开客服界面失败: ${e.message}", e)
-                                    showExceptionToast("打开客服界面失败")
+                                    design.showExceptionToast("打开客服界面失败")
                                 }
                             }
 
@@ -850,7 +850,7 @@ class MainActivity : BaseActivity<MainDesign>() {
      */
     private suspend fun importSimpleSubscription() {
         try {
-            val user = SimplePreferenceManager.currentUser
+            val user = SimplePreferenceManager.localUser
             if (user == null) {
                 android.util.Log.e("MainActivity", "用户信息为空")
                 withContext(Dispatchers.Main) {
@@ -922,7 +922,7 @@ class MainActivity : BaseActivity<MainDesign>() {
                     try {
                         commit(uuid) {
                             launch {
-                                setActive(uuid)
+                                activeProfile()
                                 updateStatus(it)
                             }
                         }
