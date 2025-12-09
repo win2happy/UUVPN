@@ -87,22 +87,26 @@ class MainActivity : BaseActivity<MainDesign>() {
             design.fetch()
             design.startBannsers()
 
+            // 判断是简化登录还是V2Board登录
+            if (SimplePreferenceManager.isLoggedIn) {
+                // 简化登录模式 - 直接导入订阅链接
+                Log.d("MainActivity", "使用简化登录模式")
+                android.util.Log.d("MainActivity", "简化登录模式 - 订阅URL: ${SimplePreferenceManager.currentUser?.subscribeUrl}")
+                
+                // 导入订阅链接到配置
+                importSimpleSubscription()
+            } else {
+                // V2Board登录模式 - 使用原有的API请求流程
+                Log.d("MainActivity", "使用V2Board登录模式")
+                
+                //1 : 查询 config 信息
+                apiService = ApiClientConfig.retrofit.create(ApiService::class.java)
 
-            //1 : 查询 config 信息
+                val currentTime = System.currentTimeMillis()
+                val cacheExpiryTime = 10 * 60 * 1000 // 10 minutes in milliseconds
 
-            apiService = ApiClientConfig.retrofit.create(ApiService::class.java)
-
-            //获取 Config 数据
-//        CoroutineScope(Dispatchers.IO).launch {   }
-
-
-
-            val currentTime = System.currentTimeMillis()
-            val cacheExpiryTime = 10 * 60 * 1000 // 10 minutes in milliseconds
-
-
-// 如果缓存数据存在且未超过 10 分钟，使用缓存数据；否则，重新请求数据
-            if (  PreferenceManager.cached_data != null && (currentTime - PreferenceManager.cache_timestamp) <= cacheExpiryTime)  {
+                // 如果缓存数据存在且未超过 10 分钟，使用缓存数据；否则，重新请求数据
+                if (PreferenceManager.cached_data != null && (currentTime - PreferenceManager.cache_timestamp) <= cacheExpiryTime) {
                 // 使用缓存数据
                 val gson = Gson()
                 val configResponse =  gson.fromJson(PreferenceManager.cached_data, ConfigResponse::class.java)
@@ -155,18 +159,14 @@ class MainActivity : BaseActivity<MainDesign>() {
 
                 }
 
-                println("subData ： ${subData}")
+                    println("subData ： ${subData}")
 
-
-
-            }else{
-                // 缓存已过期，重新请求数据
-                println("Cache expired, requesting new data")
-                // 重新请求数据
-                //requestNewData()
-                LoadingDialog.show(this, "正在更新节点数据...")
-                configRequesting()
-
+                } else {
+                    // 缓存已过期，重新请求数据
+                    println("Cache expired, requesting new data")
+                    LoadingDialog.show(this, "正在更新节点数据...")
+                    configRequesting()
+                }
             }
 
 
@@ -211,10 +211,28 @@ class MainActivity : BaseActivity<MainDesign>() {
                                 startActivity(HelpActivity::class.intent)
                             MainDesign.Request.OpenAbout ->
                                 design.showAbout(queryAppVersionName())
-                            MainDesign.Request.OpenSettingsDIY ->
-                                startActivity(ProfileActivity::class.intent)
-                            MainDesign.Request.OpenSettingsKEFU ->
-                                startActivity(PlansActivity::class.intent)
+                            MainDesign.Request.OpenSettingsDIY -> {
+                                try {
+                                    // 简化登录模式下，跳转到订阅管理界面
+                                    if (SimplePreferenceManager.isLoggedIn) {
+                                        startActivity(SubscriptionManagerActivity::class.intent)
+                                    } else {
+                                        // V2Board模式下，跳转到原配置界面
+                                        startActivity(ProfileActivity::class.intent)
+                                    }
+                                } catch (e: Exception) {
+                                    android.util.Log.e("MainActivity", "打开设置失败: ${e.message}", e)
+                                    showExceptionToast("打开设置失败：${e.message}")
+                                }
+                            }
+                            MainDesign.Request.OpenSettingsKEFU -> {
+                                try {
+                                    startActivity(PlansActivity::class.intent)
+                                } catch (e: Exception) {
+                                    android.util.Log.e("MainActivity", "打开客服界面失败: ${e.message}", e)
+                                    showExceptionToast("打开客服界面失败")
+                                }
+                            }
 
                             MainDesign.Request.OpenModeDirect ->
 
@@ -463,7 +481,75 @@ class MainActivity : BaseActivity<MainDesign>() {
     }
 
     private suspend fun MainDesign.startClash() {
+        val activeProfile = withProfile { queryActive() }
+        println("当前订阅文件：${activeProfile}")
+        
+        // 简化登录模式 - 检查是否已有配置
+        if (SimplePreferenceManager.isLoggedIn) {
+            android.util.Log.d("MainActivity", "简化登录模式 - 开始连接")
+            
+            if (activeProfile == null) {
+                android.util.Log.e("MainActivity", "没有活动配置，尝试重新导入")
+                LoadingDialog.show(this@MainActivity, "正在导入订阅...")
+                
+                try {
+                    importSimpleSubscription()
+                    
+                    // 等待配置导入完成
+                    delay(2000)
+                    
+                    val newProfile = withProfile { queryActive() }
+                    if (newProfile == null) {
+                        withContext(Dispatchers.Main) {
+                            LoadingDialog.hide()
+                            showCustomDialog(
+                                title = "连接失败",
+                                message = "订阅配置未就绪，请稍后重试",
+                                positiveButtonText = "确定"
+                            )
+                        }
+                        return
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("MainActivity", "导入订阅失败: ${e.message}", e)
+                    withContext(Dispatchers.Main) {
+                        LoadingDialog.hide()
+                        showCustomDialog(
+                            title = "连接失败",
+                            message = "订阅导入失败：${e.message}",
+                            positiveButtonText = "确定"
+                        )
+                    }
+                    return
+                }
+            }
+            
+            // 启动 Clash 服务
+            withContext(Dispatchers.Main) {
+                LoadingDialog.show(this@MainActivity, "正在启动VPN...")
+            }
+            
+            try {
+                startClashService()
+                withContext(Dispatchers.Main) {
+                    LoadingDialog.hide()
+                    android.widget.Toast.makeText(
+                        this@MainActivity,
+                        "VPN已启动",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("MainActivity", "启动Clash失败: ${e.message}", e)
+                withContext(Dispatchers.Main) {
+                    LoadingDialog.hide()
+                    showExceptionToast("启动失败：${e.message}")
+                }
+            }
+            return
+        }
 
+        // V2Board登录模式 - 原有逻辑
         //删除所有节点
         withProfile {
             var allProfiles = queryAll()
@@ -473,19 +559,6 @@ class MainActivity : BaseActivity<MainDesign>() {
             }
         }
 
-
-//        val activeProfile = withProfile { queryActive() }
-//        if (activeProfile != null) {
-//            android.util.Log.i("activeProfile",">> ${activeProfile.type.name}  ${activeProfile.uuid} ${activeProfile.source} ")
-//            showToast(R.string.no_profile_selected, ToastDuration.Long) {
-//                setAction(R.string.profiles) {
-//                    startActivity(ProfilesActivity::class.intent)
-//                }
-//            }
-
-//        }
-        val activeProfile = withProfile { queryActive() }
-        println("当前订阅文件：${activeProfile}")
         if (activeProfile == null ) { //|| !activeProfile.imported
 
             LoadingDialog.show(this@MainActivity, "正在请求节点数据...")
@@ -768,8 +841,142 @@ class MainActivity : BaseActivity<MainDesign>() {
     }
     private suspend fun queryAppVersionName(): String {
         return withContext(Dispatchers.IO) {
-            packageManager.getPackageInfo(packageName, 0).versionName// + "\n" + Bridge.nativeCoreVersion().replace("_", "-")
+            packageManager.getPackageInfo(packageName, 0).versionName
+        }
+    }
 
+    /**
+     * 简化登录模式 - 导入订阅链接
+     */
+    private suspend fun importSimpleSubscription() {
+        try {
+            val user = SimplePreferenceManager.currentUser
+            if (user == null) {
+                android.util.Log.e("MainActivity", "用户信息为空")
+                withContext(Dispatchers.Main) {
+                    showCustomDialog(
+                        title = "错误",
+                        message = "用户信息丢失，请重新登录",
+                        positiveButtonText = "确定",
+                        onPositiveClick = {
+                            SimplePreferenceManager.logout()
+                            startActivity(SimpleLoginActivity::class.intent)
+                            finish()
+                        }
+                    )
+                }
+                return
+            }
+
+            android.util.Log.d("MainActivity", "开始导入订阅: ${user.subscribeUrl}")
+
+            // 检查是否已有配置
+            val activeProfile = withProfile { queryActive() }
+            if (activeProfile != null) {
+                android.util.Log.d("MainActivity", "已存在配置: ${activeProfile.name}")
+                // 已有配置，尝试更新
+                try {
+                    withProfile {
+                        update(activeProfile.uuid)
+                    }
+                    android.util.Log.d("MainActivity", "订阅更新成功")
+                } catch (e: Exception) {
+                    android.util.Log.e("MainActivity", "订阅更新失败: ${e.message}", e)
+                }
+                return
+            }
+
+            // 首次导入，显示加载对话框
+            withContext(Dispatchers.Main) {
+                LoadingDialog.show(this@MainActivity, "正在导入订阅...")
+            }
+
+            // 获取订阅内容并转换（如果需要）
+            val subscriptionContent = withContext(Dispatchers.IO) {
+                try {
+                    val manager = com.github.kr328.clash.design.manager.SubscriptionManager
+                    manager.fetchSubscriptionContent(user.subscribeUrl)
+                } catch (e: Exception) {
+                    android.util.Log.e("MainActivity", "获取订阅内容失败: ${e.message}", e)
+                    throw e
+                }
+            }
+
+            android.util.Log.d("MainActivity", "成功获取订阅内容，长度: ${subscriptionContent.length}")
+
+            // 创建并导入配置
+            val uuid = withProfile {
+                val type = Profile.Type.Url
+                val name = user.username
+                
+                create(type, name).also {
+                    patch(it, name, user.subscribeUrl, 0)
+                }
+            }
+
+            android.util.Log.d("MainActivity", "创建配置成功: $uuid")
+
+            // 提交并激活配置
+            withProcessing { updateStatus ->
+                withProfile {
+                    try {
+                        commit(uuid) {
+                            launch {
+                                setActive(uuid)
+                                updateStatus(it)
+                            }
+                        }
+                        android.util.Log.d("MainActivity", "配置激活成功")
+                    } catch (e: Exception) {
+                        android.util.Log.e("MainActivity", "配置提交失败: ${e.message}", e)
+                        withContext(Dispatchers.Main) {
+                            LoadingDialog.hide()
+                            showCustomDialog(
+                                title = "导入失败",
+                                message = "订阅导入失败：${e.message}\n\n请检查：\n1. 订阅链接是否正确\n2. 网络连接是否正常\n3. 订阅内容是否有效",
+                                positiveButtonText = "重试",
+                                negativeButtonText = "取消",
+                                onPositiveClick = {
+                                    launch {
+                                        importSimpleSubscription()
+                                    }
+                                },
+                                onNegativeClick = {
+                                    // 返回登录界面
+                                    startActivity(SimpleLoginActivity::class.intent)
+                                    finish()
+                                }
+                            )
+                        }
+                        throw e
+                    }
+                }
+            }
+
+            withContext(Dispatchers.Main) {
+                LoadingDialog.hide()
+                android.widget.Toast.makeText(
+                    this@MainActivity,
+                    "订阅导入成功！",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
+
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "导入订阅异常: ${e.message}", e)
+            withContext(Dispatchers.Main) {
+                LoadingDialog.hide()
+                showCustomDialog(
+                    title = "导入失败",
+                    message = "订阅导入失败：${e.message}",
+                    positiveButtonText = "确定",
+                    onPositiveClick = {
+                        // 返回登录界面
+                        startActivity(SimpleLoginActivity::class.intent)
+                        finish()
+                    }
+                )
+            }
         }
     }
 }
