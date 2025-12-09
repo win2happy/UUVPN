@@ -228,8 +228,11 @@ class SimpleLoginActivity : AppCompatActivity() {
                                 )
                                 .setPositiveButton("确定", null)
                                 .show()
+                            
+                            testConnectionButton.isEnabled = true
+                            testConnectionButton.text = "🔍 测试订阅连接"
                         }
-                        return@withContext
+                        return@launch
                     }
                 }
                 
