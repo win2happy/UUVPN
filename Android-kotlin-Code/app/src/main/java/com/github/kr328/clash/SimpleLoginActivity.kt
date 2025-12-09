@@ -3,13 +3,14 @@ package com.github.kr328.clash
 import android.content.Intent
 import android.os.Bundle
 import android.text.InputType
+import android.widget.Button
+import android.widget.EditText
+import android.widget.ImageButton
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.github.kr328.clash.common.util.intent
 import com.github.kr328.clash.design.SimplePreferenceManager
-import com.github.kr328.clash.design.databinding.ActivitySimpleLoginBinding
-import com.github.kr328.clash.design.util.layoutInflater
-import com.github.kr328.clash.design.util.root
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -24,14 +25,26 @@ import java.net.URL
  */
 class SimpleLoginActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivitySimpleLoginBinding
+    private lateinit var usernameEditText: EditText
+    private lateinit var subscribeUrlEditText: EditText
+    private lateinit var togglePasswordVisibility: ImageButton
+    private lateinit var loginButton: Button
+    private lateinit var quickImportButton: Button
+    private lateinit var skipLoginButton: TextView
+    
     private var isPasswordVisible = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        binding = ActivitySimpleLoginBinding.inflate(this.layoutInflater, this.root, false)
-        setContentView(binding.root)
+        setContentView(com.github.kr328.clash.design.R.layout.activity_simple_login)
+        
+        // 初始化视图
+        usernameEditText = findViewById(com.github.kr328.clash.design.R.id.usernameEditText)
+        subscribeUrlEditText = findViewById(com.github.kr328.clash.design.R.id.subscribeUrlEditText)
+        togglePasswordVisibility = findViewById(com.github.kr328.clash.design.R.id.togglePasswordVisibility)
+        loginButton = findViewById(com.github.kr328.clash.design.R.id.loginButton)
+        quickImportButton = findViewById(com.github.kr328.clash.design.R.id.quickImportButton)
+        skipLoginButton = findViewById(com.github.kr328.clash.design.R.id.skipLoginButton)
 
         SimplePreferenceManager.init(this)
 
@@ -40,23 +53,23 @@ class SimpleLoginActivity : AppCompatActivity() {
 
     private fun setupViews() {
         // 切换订阅链接可见性
-        binding.togglePasswordVisibility.setOnClickListener {
+        togglePasswordVisibility.setOnClickListener {
             isPasswordVisible = !isPasswordVisible
             
             if (isPasswordVisible) {
-                binding.subscribeUrlEditText.inputType = InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
-                binding.togglePasswordVisibility.setImageResource(com.github.kr328.clash.design.R.drawable.visibility_24px)
+                subscribeUrlEditText.inputType = InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+                togglePasswordVisibility.setImageResource(com.github.kr328.clash.design.R.drawable.visibility_24px)
             } else {
-                binding.subscribeUrlEditText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-                binding.togglePasswordVisibility.setImageResource(com.github.kr328.clash.design.R.drawable.visibility_off_24px)
+                subscribeUrlEditText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+                togglePasswordVisibility.setImageResource(com.github.kr328.clash.design.R.drawable.visibility_off_24px)
             }
-            binding.subscribeUrlEditText.setSelection(binding.subscribeUrlEditText.text.length)
+            subscribeUrlEditText.setSelection(subscribeUrlEditText.text.length)
         }
 
         // 登录按钮
-        binding.loginButton.setOnClickListener {
-            val username = binding.usernameEditText.text.toString().trim()
-            val subscribeUrl = binding.subscribeUrlEditText.text.toString().trim()
+        loginButton.setOnClickListener {
+            val username = usernameEditText.text.toString().trim()
+            val subscribeUrl = subscribeUrlEditText.text.toString().trim()
 
             when {
                 username.isEmpty() -> {
@@ -75,12 +88,12 @@ class SimpleLoginActivity : AppCompatActivity() {
         }
 
         // 快速导入按钮 - 从剪贴板导入
-        binding.quickImportButton?.setOnClickListener {
+        quickImportButton.setOnClickListener {
             importFromClipboard()
         }
 
         // 跳过登录 - 以访客模式使用
-        binding.skipLoginButton?.setOnClickListener {
+        skipLoginButton.setOnClickListener {
             Toast.makeText(this, "访客模式需要先导入订阅链接", Toast.LENGTH_LONG).show()
         }
     }
@@ -95,8 +108,8 @@ class SimpleLoginActivity : AppCompatActivity() {
     }
 
     private fun performLogin(username: String, subscribeUrl: String) {
-        binding.loginButton.isEnabled = false
-        binding.loginButton.text = "验证订阅中..."
+        loginButton.isEnabled = false
+        loginButton.text = "验证订阅中..."
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -125,8 +138,8 @@ class SimpleLoginActivity : AppCompatActivity() {
                             "订阅链接无法访问，请检查网络或链接是否正确",
                             Toast.LENGTH_LONG
                         ).show()
-                        binding.loginButton.isEnabled = true
-                        binding.loginButton.text = "登录"
+                        loginButton.isEnabled = true
+                        loginButton.text = "登录"
                     }
                 }
             } catch (e: Exception) {
@@ -136,8 +149,8 @@ class SimpleLoginActivity : AppCompatActivity() {
                         "登录失败: ${e.message}",
                         Toast.LENGTH_LONG
                     ).show()
-                    binding.loginButton.isEnabled = true
-                    binding.loginButton.text = "登录"
+                    loginButton.isEnabled = true
+                    loginButton.text = "登录"
                 }
             }
         }
@@ -174,7 +187,7 @@ class SimpleLoginActivity : AppCompatActivity() {
                 val text = clip.getItemAt(0).text?.toString() ?: ""
                 
                 if (isValidSubscribeUrl(text)) {
-                    binding.subscribeUrlEditText.setText(text)
+                    subscribeUrlEditText.setText(text)
                     Toast.makeText(this, "已从剪贴板导入订阅链接", Toast.LENGTH_SHORT).show()
                 } else {
                     Toast.makeText(this, "剪贴板中没有有效的订阅链接", Toast.LENGTH_SHORT).show()

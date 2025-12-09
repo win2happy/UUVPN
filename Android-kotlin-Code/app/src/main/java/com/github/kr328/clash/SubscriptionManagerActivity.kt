@@ -1,15 +1,16 @@
 package com.github.kr328.clash
 
 import android.os.Bundle
+import android.widget.Button
+import android.widget.ImageButton
+import android.widget.ProgressBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.github.kr328.clash.design.SimplePreferenceManager
-import com.github.kr328.clash.design.databinding.ActivitySubscriptionManagerBinding
 import com.github.kr328.clash.design.manager.SubscriptionManager
 import com.github.kr328.clash.design.util.TrafficStatsUtil
-import com.github.kr328.clash.design.util.layoutInflater
-import com.github.kr328.clash.design.util.root
 import com.github.kr328.clash.utity.LoadingDialog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -29,14 +30,48 @@ import java.util.Locale
  */
 class SubscriptionManagerActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivitySubscriptionManagerBinding
+    private lateinit var backButton: ImageButton
+    private lateinit var usernameText: TextView
+    private lateinit var deviceIdText: TextView
+    private lateinit var subscriptionNameText: TextView
+    private lateinit var subscriptionUrlText: TextView
+    private lateinit var subscriptionStatusText: TextView
+    private lateinit var lastUpdateText: TextView
+    private lateinit var expireTimeText: TextView
+    private lateinit var updateSubscriptionButton: Button
+    private lateinit var copyUrlButton: Button
+    private lateinit var trafficUsageText: TextView
+    private lateinit var trafficProgressBar: ProgressBar
+    private lateinit var uploadText: TextView
+    private lateinit var downloadText: TextView
+    private lateinit var totalTrafficText: TextView
+    private lateinit var resetTrafficButton: Button
+    private lateinit var importNewSubscriptionButton: Button
+    
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        binding = ActivitySubscriptionManagerBinding.inflate(this.layoutInflater, this.root, false)
-        setContentView(binding.root)
+        setContentView(com.github.kr328.clash.design.R.layout.activity_subscription_manager)
+        
+        // 初始化视图
+        backButton = findViewById(com.github.kr328.clash.design.R.id.backButton)
+        usernameText = findViewById(com.github.kr328.clash.design.R.id.usernameText)
+        deviceIdText = findViewById(com.github.kr328.clash.design.R.id.deviceIdText)
+        subscriptionNameText = findViewById(com.github.kr328.clash.design.R.id.subscriptionNameText)
+        subscriptionUrlText = findViewById(com.github.kr328.clash.design.R.id.subscriptionUrlText)
+        subscriptionStatusText = findViewById(com.github.kr328.clash.design.R.id.subscriptionStatusText)
+        lastUpdateText = findViewById(com.github.kr328.clash.design.R.id.lastUpdateText)
+        expireTimeText = findViewById(com.github.kr328.clash.design.R.id.expireTimeText)
+        updateSubscriptionButton = findViewById(com.github.kr328.clash.design.R.id.updateSubscriptionButton)
+        copyUrlButton = findViewById(com.github.kr328.clash.design.R.id.copyUrlButton)
+        trafficUsageText = findViewById(com.github.kr328.clash.design.R.id.trafficUsageText)
+        trafficProgressBar = findViewById(com.github.kr328.clash.design.R.id.trafficProgressBar)
+        uploadText = findViewById(com.github.kr328.clash.design.R.id.uploadText)
+        downloadText = findViewById(com.github.kr328.clash.design.R.id.downloadText)
+        totalTrafficText = findViewById(com.github.kr328.clash.design.R.id.totalTrafficText)
+        resetTrafficButton = findViewById(com.github.kr328.clash.design.R.id.resetTrafficButton)
+        importNewSubscriptionButton = findViewById(com.github.kr328.clash.design.R.id.importNewSubscriptionButton)
 
         SimplePreferenceManager.init(this)
 
@@ -46,27 +81,27 @@ class SubscriptionManagerActivity : AppCompatActivity() {
 
     private fun setupViews() {
         // 返回按钮
-        binding.backButton.setOnClickListener {
+        backButton.setOnClickListener {
             finish()
         }
 
         // 更新订阅按钮
-        binding.updateSubscriptionButton.setOnClickListener {
+        updateSubscriptionButton.setOnClickListener {
             updateSubscription()
         }
 
         // 导入新订阅按钮
-        binding.importNewSubscriptionButton.setOnClickListener {
+        importNewSubscriptionButton.setOnClickListener {
             showImportDialog()
         }
 
         // 重置流量统计按钮
-        binding.resetTrafficButton.setOnClickListener {
+        resetTrafficButton.setOnClickListener {
             showResetTrafficDialog()
         }
 
         // 复制订阅链接按钮
-        binding.copyUrlButton.setOnClickListener {
+        copyUrlButton.setOnClickListener {
             copySubscriptionUrl()
         }
     }
@@ -78,8 +113,8 @@ class SubscriptionManagerActivity : AppCompatActivity() {
 
         if (sub != null) {
             // 订阅信息
-            binding.subscriptionNameText.text = sub.name
-            binding.subscriptionUrlText.text = sub.url
+            subscriptionNameText.text = sub.name
+            subscriptionUrlText.text = sub.url
             
             // 最后更新时间
             val updateTime = if (sub.lastUpdate > 0) {
@@ -87,57 +122,57 @@ class SubscriptionManagerActivity : AppCompatActivity() {
             } else {
                 "未更新"
             }
-            binding.lastUpdateText.text = "最后更新: $updateTime"
+            lastUpdateText.text = "最后更新: $updateTime"
 
             // 流量信息
             if (sub.totalTraffic > 0) {
-                binding.trafficUsageText.text = TrafficStatsUtil.getTrafficStatusDescription()
-                binding.trafficProgressBar.max = 100
-                binding.trafficProgressBar.progress = sub.trafficUsagePercent
+                trafficUsageText.text = TrafficStatsUtil.getTrafficStatusDescription()
+                trafficProgressBar.max = 100
+                trafficProgressBar.progress = sub.trafficUsagePercent
             } else {
-                binding.trafficUsageText.text = "流量无限制"
-                binding.trafficProgressBar.progress = 0
+                trafficUsageText.text = "流量无限制"
+                trafficProgressBar.progress = 0
             }
 
             // 过期时间
             if (sub.expireAt > 0) {
                 val expireDate = dateFormat.format(Date(sub.expireAt))
-                binding.expireTimeText.text = "过期时间: $expireDate"
+                expireTimeText.text = "过期时间: $expireDate"
                 
                 if (sub.isExpired) {
-                    binding.expireTimeText.setTextColor(getColor(android.R.color.holo_red_dark))
+                    expireTimeText.setTextColor(getColor(android.R.color.holo_red_dark))
                 }
             } else {
-                binding.expireTimeText.text = "永久有效"
+                expireTimeText.text = "永久有效"
             }
 
             // 订阅状态
             val status = SubscriptionManager.getSubscriptionStatus()
-            binding.subscriptionStatusText.text = "状态: $status"
+            subscriptionStatusText.text = "状态: $status"
             
             when {
                 sub.isExpired || sub.isTrafficExceeded -> {
-                    binding.subscriptionStatusText.setTextColor(getColor(android.R.color.holo_red_dark))
+                    subscriptionStatusText.setTextColor(getColor(android.R.color.holo_red_dark))
                 }
                 else -> {
-                    binding.subscriptionStatusText.setTextColor(getColor(android.R.color.holo_green_dark))
+                    subscriptionStatusText.setTextColor(getColor(android.R.color.holo_green_dark))
                 }
             }
         } else {
-            binding.subscriptionNameText.text = "未导入订阅"
-            binding.subscriptionUrlText.text = "请导入订阅链接"
+            subscriptionNameText.text = "未导入订阅"
+            subscriptionUrlText.text = "请导入订阅链接"
         }
 
         // 用户信息
         if (user != null) {
-            binding.usernameText.text = "用户: ${user.username}"
-            binding.deviceIdText.text = "设备ID: ${user.deviceId.substring(0, 8)}..."
+            usernameText.text = "用户: ${user.username}"
+            deviceIdText.text = "设备ID: ${user.deviceId.substring(0, 8)}..."
         }
 
         // 本地流量统计
-        binding.uploadText.text = "上传: ${TrafficStatsUtil.formatBytes(stats.uploadBytes)}"
-        binding.downloadText.text = "下载: ${TrafficStatsUtil.formatBytes(stats.downloadBytes)}"
-        binding.totalTrafficText.text = "总计: ${TrafficStatsUtil.formatBytes(stats.totalBytes)}"
+        uploadText.text = "上传: ${TrafficStatsUtil.formatBytes(stats.uploadBytes)}"
+        downloadText.text = "下载: ${TrafficStatsUtil.formatBytes(stats.downloadBytes)}"
+        totalTrafficText.text = "总计: ${TrafficStatsUtil.formatBytes(stats.totalBytes)}"
     }
 
     private fun updateSubscription() {
