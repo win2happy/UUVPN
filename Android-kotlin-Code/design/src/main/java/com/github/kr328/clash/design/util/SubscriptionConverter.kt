@@ -31,24 +31,7 @@ object SubscriptionConverter {
         val trimmedContent = content.trim()
         
         return when {
-            // Clash配置
-            trimmedContent.contains("proxies:") ||
-            trimmedContent.contains("proxy-groups:") ||
-            trimmedContent.contains("\"proxies\"") ||
-            trimmedContent.contains("\"proxy-groups\"") -> {
-                Log.d(TAG, "检测到Clash配置")
-                SubscriptionType.CLASH
-            }
-            
-            // V2Ray JSON格式
-            trimmedContent.startsWith("{") && 
-            (trimmedContent.contains("\"outbounds\"") || 
-             trimmedContent.contains("\"vnext\"")) -> {
-                Log.d(TAG, "检测到V2Ray JSON配置")
-                SubscriptionType.V2RAY_JSON
-            }
-            
-            // V2Ray Base64编码（vmess://开头）
+            // V2Ray Base64编码（vmess://开头）- 优先检测，避免误判
             trimmedContent.contains("vmess://") ||
             trimmedContent.contains("vless://") ||
             trimmedContent.contains("trojan://") -> {
@@ -63,11 +46,31 @@ object SubscriptionConverter {
                 SubscriptionType.SHADOWSOCKS
             }
             
+            // Clash配置 - 必须以YAML格式开头或包含完整的YAML结构
+            (trimmedContent.startsWith("proxies:") || 
+             trimmedContent.startsWith("proxy-groups:") ||
+             trimmedContent.startsWith("port:") ||
+             trimmedContent.startsWith("mixed-port:")) &&
+            !trimmedContent.contains("://") -> {
+                Log.d(TAG, "检测到Clash配置")
+                SubscriptionType.CLASH
+            }
+            
+            // V2Ray JSON格式
+            trimmedContent.startsWith("{") && 
+            (trimmedContent.contains("\"outbounds\"") || 
+             trimmedContent.contains("\"vnext\"")) -> {
+                Log.d(TAG, "检测到V2Ray JSON配置")
+                SubscriptionType.V2RAY_JSON
+            }
+            
             // 尝试Base64解码
             else -> {
                 try {
                     val decoded = String(Base64.decode(trimmedContent, Base64.DEFAULT))
                     if (decoded.contains("vmess://") || 
+                        decoded.contains("vless://") ||
+                        decoded.contains("trojan://") ||
                         decoded.contains("ss://") ||
                         decoded.contains("ssr://")) {
                         Log.d(TAG, "检测到Base64编码的订阅")
