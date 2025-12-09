@@ -107,6 +107,17 @@
             android:layout_marginBottom="12dp"
             app:cornerRadius="8dp" />
 
+        <!-- 测试连接按钮 -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/testConnectionButton"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="🔍 测试订阅连接"
+            android:textSize="14sp"
+            android:layout_marginBottom="12dp"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            app:cornerRadius="8dp" />
+
         <!-- 快速导入按钮 -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/quickImportButton"

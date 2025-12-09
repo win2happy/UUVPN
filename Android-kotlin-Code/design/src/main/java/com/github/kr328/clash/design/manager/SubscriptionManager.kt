@@ -80,12 +80,21 @@ object SubscriptionManager {
      */
     suspend fun fetchSubscriptionContent(url: String): String {
         return withContext(Dispatchers.IO) {
-            val connection = URL(url).openConnection()
-            connection.connectTimeout = 15000
-            connection.readTimeout = 15000
-            connection.setRequestProperty("User-Agent", "ClashForAndroid/UUVPN")
-            
-            connection.getInputStream().bufferedReader().use { it.readText() }
+            try {
+                val connection = URL(url).openConnection()
+                connection.connectTimeout = 30000  // 增加到30秒
+                connection.readTimeout = 30000
+                connection.setRequestProperty("User-Agent", "ClashForAndroid/UUVPN")
+                connection.setRequestProperty("Accept", "*/*")
+                
+                val content = connection.getInputStream().bufferedReader().use { it.readText() }
+                
+                android.util.Log.d("SubscriptionManager", "成功获取订阅内容，长度: ${content.length}")
+                content
+            } catch (e: Exception) {
+                android.util.Log.e("SubscriptionManager", "获取订阅内容失败: ${e.message}", e)
+                throw e
+            }
         }
     }
 
@@ -142,8 +151,10 @@ object SubscriptionManager {
         return withContext(Dispatchers.IO) {
             try {
                 val connection = URL(url).openConnection()
-                connection.connectTimeout = 10000
+                connection.connectTimeout = 30000  // 增加到30秒
+                connection.readTimeout = 30000
                 connection.setRequestProperty("User-Agent", "ClashForAndroid/UUVPN")
+                connection.setRequestProperty("Accept", "*/*")
                 connection.connect()
                 
                 // 读取响应头
